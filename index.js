@@ -97,6 +97,10 @@ function check(port, host) {
         opts.host = '127.0.0.1';
     }
 
+    if (!is.positiveInt(opts.timeOutMs)) {
+        opts.timeOutMs = null;
+    }
+
     function cleanUp() {
         if (client) {
             client.removeAllListeners('connect');
@@ -128,6 +132,15 @@ function check(port, host) {
     }
 
     client = new net.Socket();
+    if (is.positiveInt(opts.timeOutMs)) {
+        client.setTimeout(opts.timeOutMs);
+        client.on('timeout', () => {
+            debug('check timeout');
+            inUse = false;
+            deferred.resolve(inUse);
+            cleanUp();
+        });
+    }
     client.once('connect', onConnectCb);
     client.once('error', onErrorCb);
     client.connect({port: opts.port, host: opts.host}, function() {});
@@ -366,4 +379,3 @@ function waitUntilUsed(port, retryTimeMs, timeOutMs) {
 
     return waitUntilUsedOnHost(opts);
 }
-
